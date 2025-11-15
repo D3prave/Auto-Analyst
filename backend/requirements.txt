@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pandas
+numpy
+python-multipart
+pydantic
+matplotlib
+seaborn
+jinja2
+scikit-learn
+aiofiles

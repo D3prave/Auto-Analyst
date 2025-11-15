@@ -1,0 +1,19 @@
+# Python
+backend/venv/
+*.pyc
+__pycache__/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Data
+backend/data/
+backend/outputs/
+
+# Env files for local dev
+frontend/.env.local
+
+# OS
+.DS_Store
+*.log

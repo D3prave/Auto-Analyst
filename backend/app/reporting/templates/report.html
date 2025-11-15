@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Auto-Analyst Report - {{ dataset_id }}</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; margin: 1.5rem; }
+    h1, h2, h3 { margin-bottom: 0.3rem; }
+    .section { margin-bottom: 1.2rem; }
+    .small { color: #555; font-size: 0.9rem; }
+    table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+    th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
+  </style>
+</head>
+<body>
+  <h1>Auto-Analyst Report</h1>
+  <p class="small">Dataset ID: {{ dataset_id }}</p>
+
+  <div class="section">
+    <h2>Overview</h2>
+    <p>{{ insights.overview }}</p>
+  </div>
+
+  <div class="section">
+    <h2>Missingness</h2>
+    <p>{{ insights.missingness }}</p>
+  </div>
+
+  {% if target %}
+  <div class="section">
+    <h2>Target: {{ target }}</h2>
+    <p>{{ insights.target_balance }}</p>
+  </div>
+  {% endif %}
+
+  {% if modeling %}
+  <div class="section">
+    <h2>Modeling</h2>
+    <p>{{ insights.modeling }}</p>
+    <p>{{ insights.feature_importance }}</p>
+
+    <h3>Metrics</h3>
+    <table>
+      <thead><tr><th>Metric</th><th>Value</th></tr></thead>
+      <tbody>
+      {% for name, value in modeling.metrics.items() %}
+        <tr><td>{{ name }}</td><td>{{ "%.3f"|format(value) }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  <div class="section">
+    <h2>Columns</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th><th>Type</th><th>Missing (%)</th><th>Distinct</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for col_name, col in profile.columns.items() %}
+        <tr>
+          <td>{{ col_name }}</td>
+          <td>{{ col.inferred_type }}</td>
+          <td>{{ "%.1f"|format(col.missing_pct) }}</td>
+          <td>{{ col.distinct_count }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Plots</h2>
+    {% if plots.numeric %}
+      <h3>Numeric</h3>
+      {% for p in plots.numeric %}
+        <h4>{{ p.column }}</h4>
+        {% if p.histogram %}
+          <img src="{{ "/" + p.histogram }}" style="max-width: 480px; max-height: 320px;" />
+        {% endif %}
+        {% if p.boxplot %}
+          <img src="{{ "/" + p.boxplot }}" style="max-width: 480px; max-height: 320px;" />
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {% if plots.categorical %}
+      <h3>Categorical</h3>
+      {% for p in plots.categorical %}
+        <h4>{{ p.column }}</h4>
+        {% if p.barplot %}
+          <img src="{{ "/" + p.barplot }}" style="max-width: 480px; max-height: 320px;" />
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+
+    {% if plots.correlation_heatmap %}
+      <h3>Correlation Heatmap</h3>
+      <img src="{{ "/" + plots.correlation_heatmap.path }}" style="max-width: 640px;" />
+    {% endif %}
+  </div>
+</body>
+</html>

@@ -1,0 +1,24 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: auto-analyst-backend
+    ports:
+      - "8000:8000"
+    # Persist data/outputs on host (optional but useful)
+    volumes:
+      - ./backend/data:/app/data
+      - ./backend/outputs:/app/outputs
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: auto-analyst-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
