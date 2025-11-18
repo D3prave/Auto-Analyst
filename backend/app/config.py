@@ -1,15 +1,9 @@
+import os
 from pathlib import Path
 
 # Base directory for backend
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Where uploaded / temp datasets live
-DATA_DIR = BASE_DIR / "data"
-DATA_DIR.mkdir(parents=True, exist_ok=True)
-
-# Where plots/reports will live later
-OUTPUT_DIR = BASE_DIR / "outputs"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-# Plots directory
-PLOTS_DIR = OUTPUT_DIR / "plots"
+# Redis Configuration
+# Defaults to localhost for local dev, overridden by docker-compose to "redis"
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")

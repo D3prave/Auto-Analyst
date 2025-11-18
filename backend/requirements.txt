@@ -10,3 +10,6 @@ jinja2
 scikit-learn
 aiofiles
 weasyprint
+redis
+pyarrow
+fastparquet

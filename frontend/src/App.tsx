@@ -27,7 +27,7 @@ function App() {
   const [isRunningEda, setIsRunningEda] = useState(false);
   const [isRunningModel, setIsRunningModel] = useState(false);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
-  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false); // Added for PDF loading state
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -71,7 +71,6 @@ function App() {
     }
   };
   const handleResetAll = async () => {
-    // Use a custom modal or remove confirm later, for now window.confirm is from original
     const confirmed = window.confirm(
       "This will delete all uploaded datasets, cached profiles and plots on the server, and clear the UI. Continue?"
     );
@@ -80,7 +79,6 @@ function App() {
     setError(null);
     try {
       await api.post("/api/reset");
-      // Clear frontend state as well
       setFile(null);
       setUploadMeta(null);
       setEda(null);
@@ -88,8 +86,7 @@ function App() {
       setInsights(null);
       setTarget("");
       setOverrides({});
-    } catch (err: any)
-{
+    } catch (err: any) {
       console.error(err);
       setError(err?.response?.data?.detail || "Failed to reset server state.");
     }
@@ -178,21 +175,18 @@ function App() {
     window.open(url, "_blank");
   };
 
-  // --- NEW PDF DOWNLOAD HANDLER ---
   const handleDownloadPdf = async () => {
     if (!uploadMeta) return;
     setError(null);
-    setIsDownloadingPdf(true); // Set loading state
+    setIsDownloadingPdf(true);
 
     try {
-      // Request "format=pdf" and tell axios to expect a "blob" (binary file)
       const params = target ? { target, format: "pdf" } : { format: "pdf" };
       const res = await api.get(`/api/report/${uploadMeta.dataset_id}`, {
         params,
         responseType: "blob",
       });
 
-      // Create a temporary download link for the browser
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -200,17 +194,15 @@ function App() {
       document.body.appendChild(link);
       link.click();
 
-      // Cleanup
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
       console.error(err);
       setError("Failed to download PDF report.");
     } finally {
-      setIsDownloadingPdf(false); // Unset loading state
+      setIsDownloadingPdf(false);
     }
   };
-  // --- END OF NEW HANDLER ---
 
   return (
     <div className="app-root">
@@ -354,13 +346,13 @@ function App() {
                     <h5>{p.column}</h5>
                     {p.histogram && (
                       <img
-                        src={`${backendUrl}/${p.histogram}`}
+                        src={`${backendUrl}${p.histogram}`}
                         alt={`Histogram of ${p.column}`}
                       />
                     )}
                     {p.boxplot && (
                       <img
-                        src={`${backendUrl}/${p.boxplot}`}
+                        src={`${backendUrl}${p.boxplot}`}
                         alt={`Boxplot of ${p.column}`}
                       />
                     )}
@@ -375,7 +367,7 @@ function App() {
                     <h5>{p.column}</h5>
                     {p.barplot && (
                       <img
-                        src={`${backendUrl}/${p.barplot}`}
+                        src={`${backendUrl}${p.barplot}`}
                         alt={`Barplot of ${p.column}`}
                       />
                     )}
@@ -387,7 +379,7 @@ function App() {
               {eda.plots.correlation_heatmap ? (
                 <img
                   className="heatmap-image"
-                  src={`${backendUrl}/${eda.plots.correlation_heatmap.path}`}
+                  src={`${backendUrl}${eda.plots.correlation_heatmap.path}`}
                   alt="Correlation Heatmap"
                 />
               ) : (
@@ -397,12 +389,14 @@ function App() {
           )}
         </section>
 
+        {/* ... Modeling and Insights sections ... */}
         <section className="card">
           <div className="card-header">
             <span className="step-badge">3</span>
             <h2>Baseline Modeling</h2>
           </div>
-          <p className="card-subtitle">
+          {/* ... Keep existing modeling section code exactly as is ... */}
+             <p className="card-subtitle">
             Choose a target variable. The system will detect the task type and train baseline
             models using your column-type overrides.
           </p>
@@ -508,7 +502,6 @@ function App() {
             Generate a narrative summary of your dataset and modeling results, or open a full HTML
             report.
           </p>
-          {/* --- UPDATED BUTTONS --- */}
           <div className="row">
             <button
               onClick={handleLoadInsights}
@@ -526,8 +519,6 @@ function App() {
               {isDownloadingPdf ? "Downloading..." : "Download PDF"}
             </button>
           </div>
-          {/* --- END OF UPDATED BUTTONS --- */}
-
 
           {insights && (
             <div className="insights">

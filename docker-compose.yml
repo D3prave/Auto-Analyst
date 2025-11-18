@@ -1,4 +1,10 @@
 services:
+  redis:
+    image: "redis:alpine"
+    container_name: auto-analyst-redis
+    ports:
+      - "6379:6379"
+
   backend:
     build:
       context: ./backend
@@ -6,10 +12,10 @@ services:
     container_name: auto-analyst-backend
     ports:
       - "8000:8000"
-    # Persist data/outputs on host (optional but useful)
-    volumes:
-      - ./backend/data:/app/data
-      - ./backend/outputs:/app/outputs
+    depends_on:
+      - redis
+    environment:
+      - REDIS_URL=redis://redis:6379/0
 
   frontend:
     build:

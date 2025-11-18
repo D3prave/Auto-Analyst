@@ -79,12 +79,10 @@
       {% for p in plots.numeric %}
         <h4>{{ p.column }}</h4>
         {% if p.histogram %}
-          <!-- Uses dynamic base_path -->
-          <img src="{{ base_path }}{{ p.histogram }}" style="max-width: 480px; max-height: 320px;" />
+          <img src="{{ p.histogram }}" style="max-width: 480px; max-height: 320px;" />
         {% endif %}
         {% if p.boxplot %}
-          <!-- Uses dynamic base_path -->
-          <img src="{{ base_path }}{{ p.boxplot }}" style="max-width: 480px; max-height: 320px;" />
+          <img src="{{ p.boxplot }}" style="max-width: 480px; max-height: 320px;" />
         {% endif %}
       {% endfor %}
     {% endif %}
@@ -94,16 +92,14 @@
       {% for p in plots.categorical %}
         <h4>{{ p.column }}</h4>
         {% if p.barplot %}
-          <!-- Uses dynamic base_path -->
-          <img src="{{ base_path }}{{ p.barplot }}" style="max-width: 480px; max-height: 320px;" />
+          <img src="{{ p.barplot }}" style="max-width: 480px; max-height: 320px;" />
         {% endif %}
       {% endfor %}
     {% endif %}
 
     {% if plots.correlation_heatmap %}
       <h3>Correlation Heatmap</h3>
-      <!-- Uses dynamic base_path -->
-      <img src="{{ base_path }}{{ plots.correlation_heatmap.path }}" style="max-width: 640px;" />
+      <img src="{{ plots.correlation_heatmap.path }}" style="max-width: 640px;" />
     {% endif %}
   </div>
 </body>
