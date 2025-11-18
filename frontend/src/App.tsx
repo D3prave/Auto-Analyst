@@ -61,8 +61,24 @@ function App() {
       const fd = new FormData(); fd.append("file", file);
       const res = await api.post<UploadResponse>("/api/upload", fd);
       setUploadMeta(res.data);
-    } catch (err: any) { setError(err?.response?.data?.detail || "Upload failed."); } 
-    finally { setIsUploading(false); }
+
+      setError(null);
+      setIsRunningEda(true);
+      try {
+        const edaRes = await api.post<EDAResponse>(`/api/eda/${res.data.dataset_id}`, { overrides });
+        setEda(edaRes.data);
+      } catch (err: any) {
+        setError(err?.response?.data?.detail || "EDA failed.");
+      } finally {
+        setIsRunningEda(false);
+      }
+
+    } catch (err: any) { 
+      setError(err?.response?.data?.detail || "Upload failed."); 
+    } 
+    finally { 
+      setIsUploading(false); 
+    }
   };
 
   const handleResetAll = async () => {
@@ -170,6 +186,11 @@ function App() {
   const isValidSplit = testSize + valSize < 1.0;
   const canTrain = uploadMeta && target && isValidSplit && !isRunningModel;
 
+  const hasDrops = colsToDrop.size > 0;
+  const hasFill = !!fillNaStrategy;
+  const hasFilter = !!(filterCol && filterVal);
+  const canApplyChanges = (hasDrops || hasFill || hasFilter) && !isDropping;
+
   return (
     <div className="app-root">
       <header className="app-header">
@@ -267,7 +288,15 @@ function App() {
                     <select value={filterOp} onChange={e => setFilterOp(e.target.value)}><option value="==">==</option><option value="!=">!=</option><option value=">">&gt;</option><option value="<">&lt;</option><option value=">=">&gt;=</option><option value="<=">&lt;=</option></select>
                     <input placeholder="Value" value={filterVal} onChange={e => setFilterVal(e.target.value)} style={{width: '100px'}} />
                 </div>
-                <div className="row row-end"><button onClick={handleTransform} disabled={isDropping} className="secondary-btn">{isDropping ? "Processing..." : "Apply Changes"}</button></div>
+                <div className="row row-end">
+                  <button 
+                    onClick={handleTransform} 
+                    disabled={!canApplyChanges} 
+                    className="primary-btn"
+                  >
+                    {isDropping ? "Processing..." : "Apply Changes"}
+                  </button>
+                </div>
             </section>
 
             <section className="card">
@@ -290,15 +319,42 @@ function App() {
                 {!isValidSplit && <p style={{color: 'red'}}>Split Error</p>}
               </div>
               
-              {modelHistory.length > 0 && (
+                {modelHistory.length > 0 && (
                 <div className="history-board">
-                    <h4>History</h4>
-                    <table style={{width: '100%', fontSize: '0.9rem'}}>
-                      <thead><tr><th>Model</th><th>Metric</th><th>Score</th><th>Tuned?</th></tr></thead>
-                      <tbody>{modelHistory.map((m, i) => <tr key={i} style={{background: m === modeling ? '#f0f9ff' : ''}}><td>{m.best_model_class}</td><td>{Object.keys(m.metrics)[0]}</td><td>{Object.values(m.metrics)[0].toFixed(4)}</td><td>{m.tuned?'Yes':'No'}</td></tr>)}</tbody>
-                    </table>
+                  <h4>History</h4>
+                  <table style={{width: '100%', fontSize: '0.9rem'}}>
+                    <thead><tr><th>Model</th><th>Metric</th><th>Score</th><th>Tuned?</th></tr></thead>
+                    <tbody>
+                    {modelHistory.map((m, i) => {
+                      let primaryMetric: string;
+
+                      if (optimizeMetric === "f1" && "f1_macro" in m.metrics) {
+                      primaryMetric = "f1_macro";
+                      } else if (optimizeMetric === "accuracy" && "accuracy" in m.metrics) {
+                      primaryMetric = "accuracy";
+                      } else if ("f1_macro" in m.metrics) {
+                      primaryMetric = "f1_macro";
+                      } else if ("accuracy" in m.metrics) {
+                      primaryMetric = "accuracy";
+                      } else {
+                      primaryMetric = Object.keys(m.metrics)[0];
+                      }
+
+                      const score = m.metrics[primaryMetric];
+
+                      return (
+                      <tr key={i} style={{ background: m === modeling ? '#f0f9ff' : '' }}>
+                        <td>{m.best_model_class}</td>
+                        <td>{primaryMetric}</td>
+                        <td>{score.toFixed(4)}</td>
+                        <td>{m.tuned ? 'Yes' : 'No'}</td>
+                      </tr>
+                      );
+                    })}
+                    </tbody>
+                  </table>
                 </div>
-              )}
+                )}
 
               {modeling && (
                 <div className="model-results">

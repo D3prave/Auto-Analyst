@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 import pandas as pd
 import numpy as np
 from app.schemas import ColumnType
+import warnings
 
 def infer_column_type(s: pd.Series) -> str:
     """Heuristic-based column type inference."""
@@ -13,8 +14,10 @@ def infer_column_type(s: pd.Series) -> str:
         # Sample check for datetime strings
         sample = s.dropna().astype(str).head(50)
         try:
-            if len(sample) > 0 and (pd.to_datetime(sample, errors='coerce').notna().mean() > 0.7):
-                return "datetime"
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                if len(sample) > 0 and (pd.to_datetime(sample, errors='coerce').notna().mean() > 0.7):
+                    return "datetime"
         except: pass
 
     if pd.api.types.is_numeric_dtype(s):
