@@ -13,3 +13,5 @@ weasyprint
 redis
 pyarrow
 fastparquet
+optuna
+joblib

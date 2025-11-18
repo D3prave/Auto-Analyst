@@ -4,103 +4,68 @@
   <meta charset="utf-8" />
   <title>Auto-Analyst Report - {{ dataset_id }}</title>
   <style>
-    body { font-family: system-ui, -apple-system, sans-serif; margin: 1.5rem; }
-    h1, h2, h3 { margin-bottom: 0.3rem; }
-    .section { margin-bottom: 1.2rem; }
-    .small { color: #555; font-size: 0.9rem; }
-    table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
-    th, td { border: 1px solid #ddd; padding: 4px 6px; text-align: left; }
+    body { font-family: system-ui, sans-serif; margin: 1.5rem; color: #1f2937; }
+    h1 { color: #111827; border-bottom: 2px solid #e5e7eb; padding-bottom: 0.5rem; }
+    h2 { margin-top: 2rem; color: #374151; }
+    table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+    th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+    th { background: #f9fafb; font-weight: 600; }
+    img { max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; }
   </style>
 </head>
 <body>
   <h1>Auto-Analyst Report</h1>
-  <p class="small">Dataset ID: {{ dataset_id }}</p>
+  <p><strong>Dataset ID:</strong> {{ dataset_id }}</p>
 
-  <div class="section">
-    <h2>Overview</h2>
-    <p>{{ insights.overview }}</p>
-  </div>
-
-  <div class="section">
-    <h2>Missingness</h2>
-    <p>{{ insights.missingness }}</p>
-  </div>
+  <h2>Overview</h2>
+  <p>{{ insights.overview }}</p>
+  <p>{{ insights.missingness }}</p>
 
   {% if target %}
-  <div class="section">
-    <h2>Target: {{ target }}</h2>
-    <p>{{ insights.target_balance }}</p>
-  </div>
+  <h2>Target Analysis: {{ target }}</h2>
+  <p>{{ insights.target_balance }}</p>
   {% endif %}
 
   {% if modeling %}
-  <div class="section">
-    <h2>Modeling</h2>
-    <p>{{ insights.modeling }}</p>
-    <p>{{ insights.feature_importance }}</p>
-
-    <h3>Metrics</h3>
-    <table>
-      <thead><tr><th>Metric</th><th>Value</th></tr></thead>
-      <tbody>
-      {% for name, value in modeling.metrics.items() %}
-        <tr><td>{{ name }}</td><td>{{ "%.3f"|format(value) }}</td></tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <h2>Modeling Results</h2>
+  <p>{{ insights.modeling }}</p>
+  <p>{{ insights.feature_importance }}</p>
+  <h3>Metrics</h3>
+  <table>
+    <tr><th>Metric</th><th>Value</th></tr>
+    {% for k, v in modeling.metrics.items() %}<tr><td>{{ k }}</td><td>{{ "%.4f"|format(v) }}</td></tr>{% endfor %}
+  </table>
   {% endif %}
 
-  <div class="section">
-    <h2>Columns</h2>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th><th>Type</th><th>Missing (%)</th><th>Distinct</th>
-        </tr>
-      </thead>
-      <tbody>
-      {% for col_name, col in profile.columns.items() %}
-        <tr>
-          <td>{{ col_name }}</td>
-          <td>{{ col.inferred_type }}</td>
-          <td>{{ "%.1f"|format(col.missing_pct) }}</td>
-          <td>{{ col.distinct_count }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-  </div>
+  <h2>Data Profile</h2>
+  <table>
+    <tr><th>Column</th><th>Type</th><th>Missing</th><th>Distinct</th></tr>
+    {% for name, col in profile.columns.items() %}
+    <tr><td>{{ name }}</td><td>{{ col.effective_type }}</td><td>{{ col.missing_pct|round(1) }}%</td><td>{{ col.distinct_count }}</td></tr>
+    {% endfor %}
+  </table>
 
-  <div class="section">
-    <h2>Plots</h2>
-    {% if plots.numeric %}
-      <h3>Numeric</h3>
-      {% for p in plots.numeric %}
-        <h4>{{ p.column }}</h4>
-        {% if p.histogram %}
-          <img src="{{ p.histogram }}" style="max-width: 480px; max-height: 320px;" />
-        {% endif %}
-        {% if p.boxplot %}
-          <img src="{{ p.boxplot }}" style="max-width: 480px; max-height: 320px;" />
-        {% endif %}
-      {% endfor %}
-    {% endif %}
+  <h2>Visualizations</h2>
+  {% if plots.numeric %}
+    <h3>Numeric Features</h3>
+    {% for p in plots.numeric %}
+      <h4>{{ p.column }}</h4>
+      {% if p.histogram %}<img src="{{ p.histogram }}" />{% endif %}
+      {% if p.boxplot %}<img src="{{ p.boxplot }}" />{% endif %}
+    {% endfor %}
+  {% endif %}
 
-    {% if plots.categorical %}
-      <h3>Categorical</h3>
-      {% for p in plots.categorical %}
-        <h4>{{ p.column }}</h4>
-        {% if p.barplot %}
-          <img src="{{ p.barplot }}" style="max-width: 480px; max-height: 320px;" />
-        {% endif %}
-      {% endfor %}
-    {% endif %}
+  {% if plots.categorical %}
+    <h3>Categorical Features</h3>
+    {% for p in plots.categorical %}
+      <h4>{{ p.column }}</h4>
+      {% if p.barplot %}<img src="{{ p.barplot }}" />{% endif %}
+    {% endfor %}
+  {% endif %}
 
-    {% if plots.correlation_heatmap %}
-      <h3>Correlation Heatmap</h3>
-      <img src="{{ plots.correlation_heatmap.path }}" style="max-width: 640px;" />
-    {% endif %}
-  </div>
+  {% if plots.correlation_heatmap %}
+    <h3>Correlation</h3>
+    <img src="{{ plots.correlation_heatmap.path }}" />
+  {% endif %}
 </body>
 </html>

@@ -1,18 +1,16 @@
 from typing import Optional
 from weasyprint import HTML
-import logging
-import sys
+import logging, sys
 
-# Configure logger
+# Configure WeasyPrint logger to visible stdout
 logger = logging.getLogger("weasyprint")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.ERROR)
 handler = logging.StreamHandler(sys.stdout)
 logger.addHandler(handler)
 
 def html_to_pdf(html: str) -> Optional[bytes]:
     try:
-        pdf_bytes = HTML(string=html).write_pdf()
-        return pdf_bytes
+        return HTML(string=html).write_pdf()
     except Exception as e:
-        print(f"PDF generation error: {e}")
+        print(f"PDF Error: {e}")
         return None
