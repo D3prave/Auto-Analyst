@@ -11,7 +11,8 @@ from app.utils.file_storage import save_temp_csv, get_dataset_path
 from app.eda.profiler import profile_dataset
 from app.eda.visualizer import generate_plots
 from app.eda.insights import generate_insights
-from app.reporting.builder import build_html_report # Only one needed
+from app.reporting.builder import build_html_report
+from app.reporting.pdf_export import html_to_pdf
 from app.ml.modeling import run_baseline_models
 from app.schemas import EDARequest, ModelingRequest
 from app.config import OUTPUT_DIR, DATA_DIR
@@ -28,7 +29,6 @@ app.add_middleware(
 )
 
 # Simple in-memory dataset registry.
-# Later you can swap this for Redis / DB if you want.
 DATASETS: Dict[str, Dict] = {}
 
 def _compute_eda(dataset_id: str, overrides: dict | None = None) -> Dict:
@@ -169,30 +169,47 @@ def get_report(dataset_id: str, format: str = "html", target: str | None = None)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to load dataset: {e}")
 
-    profile = profile_dataset(df)
-    plots = generate_plots(df, dataset_id, profile)  # if you changed signature
+    profile = profile_dataset(df, overrides=meta.get("overrides"))
+    plots = generate_plots(df, dataset_id, profile)
     modeling = meta.get("modeling")
     insights = generate_insights(profile, modeling, target_col=target)
 
-    html = build_html_report(dataset_id, profile, plots, insights, modeling, target)
-
+    # 1. Build HTML
     if format == "html":
+        # For browser, base_path is "/", so paths become /outputs/...
+        html = build_html_report(
+            dataset_id, profile, plots, insights, modeling, target, base_path="/"
+        )
         return Response(content=html, media_type="text/html")
+    
+    elif format == "pdf":
+        # PDF MODE: Use relative paths (e.g., "outputs/...") 
+        # WeasyPrint will resolve these against base_url="file:///app"
+        html = build_html_report(
+            dataset_id,
+            profile,
+            plots,
+            insights,
+            modeling,
+            target,
+            base_path="",  # Empty string makes paths relative
+        )
+        
+        pdf_bytes = html_to_pdf(html)
+        if not pdf_bytes:
+            raise HTTPException(status_code=500, detail="Failed to generate PDF.")
+        
+        return Response(
+            content=pdf_bytes, 
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=report_{dataset_id}.pdf"}
+        )
 
-    # For now, HTML only – PDF can call html_to_pdf(html) later
-    raise HTTPException(status_code=400, detail="Only html format supported for now.")
+    raise HTTPException(status_code=400, detail=f"Format '{format}' not supported.")
 
 @app.post("/api/reset")
 def reset_server():
-    """
-    Danger: Development-only helper.
-    Clears in-memory dataset registry and deletes all files
-    under data/ and outputs/ (including plots).
-    """
-    # Clear in-memory registry
     DATASETS.clear()
-
-    # Helper to clean a directory's contents but keep the directory itself
     def _clean_dir(path):
         if not path.exists():
             return
@@ -204,5 +221,4 @@ def reset_server():
 
     _clean_dir(DATA_DIR)
     _clean_dir(OUTPUT_DIR)
-
     return {"status": "ok", "message": "All datasets, cache, and plots have been cleared."}

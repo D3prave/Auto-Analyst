@@ -25,9 +25,7 @@ FROM nginx:alpine
 # Copy built frontend to Nginx's html directory
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Optional: small nginx tweak to increase file size limits etc
-# For now default config is enough.
-
 EXPOSE 80
 
-CMD ["nginx", "-g", "daemon off;"]
+# UPDATED: Changed 0.0.0.0 to localhost for clarity
+CMD ["/bin/sh", "-c", "echo 'Frontend running on http://localhost:3000 (mapped via docker-compose)'; nginx -g 'daemon off;'"]

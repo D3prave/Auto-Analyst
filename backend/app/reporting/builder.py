@@ -19,6 +19,7 @@ def build_html_report(
     insights: Dict[str, str],
     modeling: Optional[Dict[str, Any]] = None,
     target: Optional[str] = None,
+    base_path: str = "/",  # Default for browser (absolute URL path)
 ) -> str:
     tmpl = _env.get_template("report.html")
     html = tmpl.render(
@@ -28,5 +29,6 @@ def build_html_report(
         insights=insights,
         modeling=modeling,
         target=target,
+        base_path=base_path,
     )
     return html

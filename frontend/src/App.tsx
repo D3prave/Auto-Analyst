@@ -11,7 +11,6 @@ import type {
 } from "./types";
 import "./App.css";
 
-
 type OverridesMap = Record<string, ColumnTypeLabel>;
 
 function App() {
@@ -28,6 +27,7 @@ function App() {
   const [isRunningEda, setIsRunningEda] = useState(false);
   const [isRunningModel, setIsRunningModel] = useState(false);
   const [isLoadingInsights, setIsLoadingInsights] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false); // Added for PDF loading state
   const [error, setError] = useState<string | null>(null);
 
   const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:8000";
@@ -71,6 +71,7 @@ function App() {
     }
   };
   const handleResetAll = async () => {
+    // Use a custom modal or remove confirm later, for now window.confirm is from original
     const confirmed = window.confirm(
       "This will delete all uploaded datasets, cached profiles and plots on the server, and clear the UI. Continue?"
     );
@@ -87,7 +88,8 @@ function App() {
       setInsights(null);
       setTarget("");
       setOverrides({});
-    } catch (err: any) {
+    } catch (err: any)
+{
       console.error(err);
       setError(err?.response?.data?.detail || "Failed to reset server state.");
     }
@@ -176,19 +178,53 @@ function App() {
     window.open(url, "_blank");
   };
 
+  // --- NEW PDF DOWNLOAD HANDLER ---
+  const handleDownloadPdf = async () => {
+    if (!uploadMeta) return;
+    setError(null);
+    setIsDownloadingPdf(true); // Set loading state
+
+    try {
+      // Request "format=pdf" and tell axios to expect a "blob" (binary file)
+      const params = target ? { target, format: "pdf" } : { format: "pdf" };
+      const res = await api.get(`/api/report/${uploadMeta.dataset_id}`, {
+        params,
+        responseType: "blob",
+      });
+
+      // Create a temporary download link for the browser
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `report_${uploadMeta.dataset_id}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+
+      // Cleanup
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error(err);
+      setError("Failed to download PDF report.");
+    } finally {
+      setIsDownloadingPdf(false); // Unset loading state
+    }
+  };
+  // --- END OF NEW HANDLER ---
+
   return (
     <div className="app-root">
       <header className="app-header">
-      <div className="title-block">
-        <h1>Auto-Analyst</h1>
-        <p>Upload a CSV, explore your data, and train baseline models with automated insights.</p>
-      </div>
-      <div className="header-right">
-        <div className="env-chip">Backend: {backendUrl}</div>
-        <button className="danger-btn" onClick={handleResetAll}>
-        Clear all data
-        </button>
-      </div>
+        <div className="title-block">
+          <h1>Auto-Analyst</h1>
+          <p>Upload a CSV, explore your data, and train baseline models with automated insights.</p>
+        </div>
+        <div className="header-right">
+          <div className="env-chip">Backend: {backendUrl}</div>
+          <button className="danger-btn" onClick={handleResetAll}>
+            Clear all data
+          </button>
+        </div>
       </header>
 
       <main className="app-main">
@@ -242,7 +278,8 @@ function App() {
               <h3 className="section-title">Columns &amp; Types</h3>
               <div className="columns-grid">
                 {Object.values(eda.profile.columns).map((col) => {
-                  const currentOverride = overrides[col.name] ?? (col.overridden_type || (col.effective_type as ColumnTypeLabel));
+                  const currentOverride =
+                    overrides[col.name] ?? (col.overridden_type || (col.effective_type as ColumnTypeLabel));
                   const labelType = col.overridden_type
                     ? `${col.overridden_type} (override)`
                     : col.effective_type;
@@ -393,73 +430,73 @@ function App() {
             </button>
           </div>
 
-            {modeling && (
+          {modeling && (
             <div className="model-results">
               <h3>
-              Task: {modeling.task_type} on target "{modeling.target}"
+                Task: {modeling.task_type} on target "{modeling.target}"
               </h3>
 
               <p className="muted">
-              Best candidate:{" "}
-              <strong>
-                {modeling.best_model} ({modeling.best_model_class})
-              </strong>{" "}
-              &mdash; test size: {(modeling.test_size * 100).toFixed(0)}%, random_state:{" "}
-              {modeling.random_state}
+                Best candidate:{" "}
+                <strong>
+                  {modeling.best_model} ({modeling.best_model_class})
+                </strong>{" "}
+                &mdash; test size: {(modeling.test_size * 100).toFixed(0)}%, random_state:{" "}
+                {modeling.random_state}
               </p>
 
               <h4>Best Model Metrics</h4>
               <ul>
-              {Object.entries(modeling.metrics).map(([name, value]) => (
-                <li key={name}>
-                {name}: {value.toFixed(3)}
-                </li>
-              ))}
+                {Object.entries(modeling.metrics).map(([name, value]) => (
+                  <li key={name}>
+                    {name}: {value.toFixed(3)}
+                  </li>
+                ))}
               </ul>
 
               <h4>Key Hyperparameters</h4>
               <ul>
-              {Object.entries(modeling.best_model_params)
-                .slice(0, 8)
-                .map(([name, value]) => (
-                <li key={name}>
-                  {name}: <code>{String(value)}</code>
-                </li>
-                ))}
+                {Object.entries(modeling.best_model_params)
+                  .slice(0, 8)
+                  .map(([name, value]) => (
+                    <li key={name}>
+                      {name}: <code>{String(value)}</code>
+                    </li>
+                  ))}
               </ul>
               <p className="muted">Showing a subset of the best model's hyperparameters.</p>
 
               <h4>All Candidate Models</h4>
               <ul>
-              {Object.entries(modeling.models).map(([name, info]) => (
-                <li key={name}>
-                <strong>{name}</strong>
-                {info.class_name ? ` (${info.class_name})` : ""}{" "}
-                {info.metrics &&
-                  (() => {
-                  const entries = Object.entries(info.metrics);
-                  if (!entries.length) return null;
-                  const [metricName, metricVal] = entries[0];
-                  return `– ${metricName}: ${metricVal.toFixed(3)}`;
-                  })()}
-                </li>
-              ))}
+                {Object.entries(modeling.models).map(([name, info]) => (
+                  <li key={name}>
+                    <strong>{name}</strong>
+                    {info.class_name ? ` (${info.class_name})` : ""}{" "}
+                    {info.metrics &&
+                      (() => {
+                        const entries = Object.entries(info.metrics);
+                        if (!entries.length) return null;
+                        const [metricName, metricVal] = entries[0];
+                        return `– ${metricName}: ${metricVal.toFixed(3)}`;
+                      })()}
+                  </li>
+                ))}
               </ul>
 
               {modeling.feature_importances && (
-              <>
-                <h4>Top Features (best model)</h4>
-                <ul>
-                {modeling.feature_importances.slice(0, 10).map((fi) => (
-                  <li key={fi.feature}>
-                  {fi.feature}: {fi.importance.toFixed(3)}
-                  </li>
-                ))}
-                </ul>
-              </>
+                <>
+                  <h4>Top Features (best model)</h4>
+                  <ul>
+                    {modeling.feature_importances.slice(0, 10).map((fi) => (
+                      <li key={fi.feature}>
+                        {fi.feature}: {fi.importance.toFixed(3)}
+                      </li>
+                    ))}
+                  </ul>
+                </>
               )}
             </div>
-            )}
+          )}
         </section>
 
         <section className="card">
@@ -471,6 +508,7 @@ function App() {
             Generate a narrative summary of your dataset and modeling results, or open a full HTML
             report.
           </p>
+          {/* --- UPDATED BUTTONS --- */}
           <div className="row">
             <button
               onClick={handleLoadInsights}
@@ -481,7 +519,15 @@ function App() {
             <button onClick={handleOpenReport} disabled={!uploadMeta}>
               Open HTML report
             </button>
+            <button
+              onClick={handleDownloadPdf}
+              disabled={!uploadMeta || isDownloadingPdf}
+            >
+              {isDownloadingPdf ? "Downloading..." : "Download PDF"}
+            </button>
           </div>
+          {/* --- END OF UPDATED BUTTONS --- */}
+
 
           {insights && (
             <div className="insights">
