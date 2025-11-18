@@ -81,15 +81,45 @@ Frontend: http://localhost:5173
 
 ## Project Structure
 ```text
-backend/
-  app/
-    eda/
-    ml/
-    utils/
-    reporting/
-    main.py
-frontend/
-  src/
-docker-compose.yml
+.
+├── backend/
+│   ├── app/
+│   │   ├── eda/
+│   │   │   ├── insights.py
+│   │   │   ├── profiler.py
+│   │   │   └── visualizer.py
+│   │   ├── ml/
+│   │   │   ├── evaluation.py
+│   │   │   ├── modeling.py
+│   │   │   ├── preprocessing.py
+│   │   │   └── task_detection.py
+│   │   ├── reporting/
+│   │   │   ├── templates/
+│   │   │   │   └── report.html
+│   │   │   ├── builder.py
+│   │   │   └── pdf_export.py
+│   │   ├── utils/
+│   │   │   └── storage.py
+│   │   ├── config.py
+│   │   ├── main.py
+│   │   └── schemas.py
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── api/
+│   │   │   └── client.ts
+│   │   ├── components/
+│   │   │   └── NumericHist.tsx
+│   │   ├── App.css
+│   │   ├── App.tsx
+│   │   ├── index.css
+│   │   ├── main.tsx
+│   │   └── types.ts
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── vite.config.ts
+│   └── ... (tsconfig, eslint, etc.)
+└── docker-compose.yml
 ```
 
