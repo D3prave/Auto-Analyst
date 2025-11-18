@@ -4,37 +4,45 @@
 Upload a file, explore the data, run ML models, view insights, and generate reports — all from a clean React interface.
 
 ---
-
 ## ✨ Features
 
-- **CSV upload**
+- **CSV Upload**
 - **Automated EDA**
   - Column type inference
   - Missingness summary
   - Numeric/categorical profiling
   - Histograms, boxplots, barplots
   - Correlation heatmap
-- **Baseline Modeling**
+- **Data Cleaning & Transformation**
+  - Drop specific columns
+  - Filter rows based on conditions
+  - Impute missing values (Mean, Median, Mode, Constant, or Drop rows)
+- **Machine Learning Engine**
   - Auto task detection (classification / regression)
   - Preprocessing pipeline (impute → scale → one-hot)
+  - **Hyperparameter Tuning** using Optuna
+  - Configurable Train/Validation/Test splits
   - Candidate models:
     - Logistic / Linear Regression
     - Random Forest
     - Gradient Boosting
-  - Best model selection + metrics
+  - Best model selection + detailed metrics
   - Feature importances
-- **Insights generator** (narrative overview)
-- **Downloadable HTML report**
-- **Column type overrides**
-- **Clear server cache** button
-- **Docker support**
+  - **Interactive Playground** for real-time predictions
+- **Insights & Reporting**
+  - AI-generated narrative overview
+  - Downloadable **HTML and PDF** reports
+- **System**
+  - Column type overrides
+  - Clear server cache (Redis)
+  - Docker support
 
 ---
 
 ## 🛠 Tech Stack
 
-**Backend:** FastAPI, pandas, numpy, scikit-learn, matplotlib, seaborn, Jinja2  
-**Frontend:** React + TypeScript, Vite, Axios  
+**Backend:** FastAPI, pandas, numpy, scikit-learn, Optuna, WeasyPrint, Redis, matplotlib, seaborn, Jinja2  
+**Frontend:** React + TypeScript, Vite, Axios, Plotly  
 **Deployment:** Docker, docker-compose, Nginx
 
 ---
@@ -85,41 +93,39 @@ Frontend: http://localhost:5173
 ├── backend/
 │   ├── app/
 │   │   ├── eda/
-│   │   │   ├── insights.py
-│   │   │   ├── profiler.py
-│   │   │   └── visualizer.py
+│   │   │   ├── insights.py       # Generates summaries of data
+│   │   │   ├── profiler.py       # Infers column types and calculates statistics
+│   │   │   └── visualizer.py     # Creates plots 
 │   │   ├── ml/
-│   │   │   ├── evaluation.py
-│   │   │   ├── modeling.py
-│   │   │   ├── preprocessing.py
-│   │   │   └── task_detection.py
+│   │   │   ├── evaluation.py     # Calculates metrics (Accuracy, F1, RMSE, R2)
+│   │   │   ├── modeling.py       # Runs training for baseline models
+│   │   │   ├── preprocessing.py  # Builds pipelines
+│   │   │   ├── task_detection.py # Detects regression or classification
+│   │   │   └── tuning.py         # Hyperparameter optimization using Optuna
 │   │   ├── reporting/
 │   │   │   ├── templates/
-│   │   │   │   └── report.html
-│   │   │   ├── builder.py
-│   │   │   └── pdf_export.py
+│   │   │   │   └── report.html   # Jinja2 template for the analysis report
+│   │   │   ├── builder.py        # Renders the HTML report
+│   │   │   └── pdf_export.py     # Converts HTML reports to PDF
 │   │   ├── utils/
-│   │   │   └── storage.py
-│   │   ├── config.py
-│   │   ├── main.py
-│   │   └── schemas.py
-│   ├── Dockerfile
-│   └── requirements.txt
+│   │   │   └── storage.py        # Manages Redis caching for datasets/images
+│   │   ├── config.py             # App configuration
+│   │   ├── main.py               # FastAPI entry point and API routes
+│   │   └── schemas.py            # Pydantic models for API validation
+│   ├── Dockerfile                # Python backend image definition
+│   └── requirements.txt          # Dependencies
 ├── frontend/
 │   ├── src/
 │   │   ├── api/
-│   │   │   └── client.ts
+│   │   │   └── client.ts         # Axios instance configuration
 │   │   ├── components/
-│   │   │   └── NumericHist.tsx
-│   │   ├── App.css
-│   │   ├── App.tsx
-│   │   ├── index.css
-│   │   ├── main.tsx
-│   │   └── types.ts
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── ... (tsconfig, eslint, etc.)
-└── docker-compose.yml
+│   │   │   └── NumericHist.tsx   # Reusable Plotly histogram component
+│   │   ├── typings/              # TypeScript type definitions
+│   │   ├── App.tsx               # Main dashboard UI logic and state
+│   │   └── types.ts              # Shared TypeScript interfaces
+│   ├── Dockerfile                # Node/Nginx frontend image definition
+│   └── package.json              # Frontend dependencies
+├── docker-compose.yml            # Orchestrates Backend, Frontend, and Redis
+└── README.md                     # Project documentation
 ```
 
